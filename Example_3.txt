@@ -1,0 +1,58 @@
+IF OBJECT_ID ('tempdb..#temp1') is not null		Drop Table #temp1
+
+SET NOCOUNT ON
+
+SET ANSI_WARNINGS OFF
+
+use RoyalMailReportingExtract
+select itemid, dmfanalysisperiodid , classofmailid, dmfsurveysid,SenderID, DMFSenderPanellistTypeID, DMFPostingMethodsID, SenderPostcodeArea, ReceiverPostcodeArea , DMFCalendarDayOfPosting, Cast (DMFCalendarDateOfPosting as date) CalendarDateofPOsting,Cast (QualityOfServiceDateOfPosting as date) QualityOfServiceDateOfPosting, cast (timeofposting as time)Timeofposting,cast (LAT as time)LAT, cast (LPT as time)LPT, dmfstatusid,cmdpostbox 
+,case
+when ReceiverPostcodeArea ='ZE' then 'Yes'
+when ReceiverPostcodeArea <> 'ZE' then 'No'
+end as 'OnIsland'
+,case
+when DMFCalendarDayOfPosting between 1 and 6 then 'M-F'
+when DMFCalendarDayOfPosting =7 then 'Sat'
+end as 'Weekday'
+
+
+into #temp1
+from tblrmrsnapshotlatest 
+where dmfsurveysid in (1,2,6) 
+and dmfstatusid in (6,7)
+and senderpostcodearea in ('ZE')
+and dmfanalysisperiodid >= 1608
+
+
+
+select temp.ItemID,DMFAnalysisPeriodId,temp.ClassOfMailID,DMFSurveysId,temp.SenderID,DMFSenderPanellistTypeID,DMFPostingMethodsID,SenderPostcodeArea,temp.ReceiverPostcodeArea,
+convert(varchar(10),DMFCalendarDayOfPosting,103) 'DMFCalendarDayOfPosting' ,
+convert(varchar(10),CalendarDateofPOsting,103) 'CalendarDateofPOsting' ,
+convert(varchar(10),temp.QualityOfServiceDateOfPosting,103) 'QualityOfServiceDateOfPosting',
+convert(varchar(8),temp.timeofposting,108) 'timeofposting',
+convert(varchar(8),temp.LAT,108) 'LAT',
+convert(varchar(8),temp.LPT,108) 'LPT',
+temp.CmdPostbox,temp.OnIsland,temp.Weekday, PostOffice,LocationDescription, 
+case
+when CmdPostbox like 'FIR%' then 'Collection'
+when CmdPostbox like 'ZE%' then 'PostBox'
+when cmdpostbox is null then 'PostOffice'
+else 'PostOffice'
+
+end as 'Type',
+case
+when CmdPostbox like 'FIR%' then 'Collection'
+when CmdPostbox like 'ZE%' then CmdPostbox
+when cmdpostbox is null then LocationDescription
+else LocationDescription 
+
+end as 'LookUp'
+,
+' ' as 'correctLAT'
+
+from #temp1 temp
+join ConsigniaSurveysCopy..tblItemData itm on temp.ItemID =itm.itemid
+left join CentralPanellistcopy..tblBusinessPostingPoint bpp on itm.SenderId = bpp.panellistid and itm.businesspostingpointid = bpp.businesspostingpointid
+
+
+
