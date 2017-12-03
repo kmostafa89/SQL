@@ -1,0 +1,263 @@
+us table
+go
+
+-- Reportable By Class: Change DMFAnalysisPeriodId='1510' to current Period.
+-- Change DMFStatusId IN (6,7) to DMFStatusId IN (6) to exclude data already published.
+
+select  DMFMailerId,
+		DMFSurveysId,
+		ClassOfMailID,
+		DMFAnalysisPeriodId,
+		COUNT(*) as Items,
+		SUM(CASE WHEN OnTImeYN=1 THEN 1.0 ELSE 0.0 END) / CAST(COUNT(*) as FLOAT) as QofS
+from	tblRMRSnapshotLatest
+
+where	DMFAnalysisPeriodId IN ('1604')	-- Analysis Period
+AND		DMFStatusId IN (6)			-- Valid / Not yet published.
+AND		DMFSurveysId in (8,9)		-- Mailsort & Presstream
+
+
+GROUP BY DMFMailerId,
+		DMFSurveysId,
+		ClassOfMailID,
+		DMFAnalysisPeriodId
+ORDER BY DMFMailerId,
+		DMFSurveysId,
+		ClassOfMailID,
+		DMFAnalysisPeriodId
+		
+		
+--QofS Report 
+-- Change DMFStatusId IN (6,7) to DMFStatusId IN (6) to exclude data already published.
+
+
+SELECT  DMFMailerId,
+		WojId,
+		DMFSurveysId,
+		ClassOfMailId,
+		mlr.CompanyName as Mailer,
+		sn.Name as Content,
+		mh.CompanyName as MailingHouse,
+		DMFCalendarDateOfPosting,
+		SenderRDC,
+		DMFDateOfPostingTypeId,
+		SeedingMethodId,
+		DMFAnalysisPeriodId,
+		COUNT(*) as Items,
+		ROUND(100 * CAST(SUM(OnTimeYN) as FLOAT) / CAST(COUNT(*) AS FLOAT),1) as QofS
+		
+from	tblRMRSnapshotLatest
+LEFT JOIN	CustomerSortedCopy..tblCompanies mlr on mlr.CompanyId = DMFMailerId
+LEFT JOIN	CustomerSortedCopy..tblCompanies mh on mh.CompanyId = MailingHouseId
+LEFT JOIN   CustomerSortedCopy..tblSpecNames sn on sn.SpecNameId = tblRMRSNapshotLatest.SpecnameId
+where	DMFAnalysisPeriodId='1510' -- Period
+AND		DMFSurveysId in (8,9) -- Mailsort & Presstream
+AND		DMFStatusId IN (6,7) -- Valid / Not Yet Published
+AND		ClassOfMailID = 1
+AND		ReceiverMSLetter IN ('A','B')
+GROUP BY DMFMailerId,
+		WojId,
+		DMFSurveysId,
+		ClassOfMailId,
+		mlr.CompanyName ,
+		sn.Name ,
+		mh.CompanyName ,
+		DMFCalendarDateOfPosting,
+		SenderRDC,
+		DMFDateOfPostingTypeId,
+		SeedingMethodId,
+		DMFAnalysisPeriodId
+ORDER BY DMFMailerId,
+		WojId,
+		DMFSurveysId,
+		ClassOfMailId,
+		mlr.CompanyName ,
+		sn.Name ,
+		mh.CompanyName ,
+		DMFCalendarDateOfPosting,
+		SenderRDC,
+		DMFDateOfPostingTypeId,
+		SeedingMethodId,
+		DMFAnalysisPeriodId
+
+
+-- SSC & G&J+
+
+SELECT	DMFMailerId,
+		WojId,
+		ReceiverId,
+		TransitTime,
+		sn.Name as Content,
+		DMFSurveysId,
+		ClassOfMailID,
+		ReceiverOutcode,
+		ReceiverInCode,
+		DMFCalendarDateOfPosting,
+		DateOfReceipt,
+		DMFReceiverPanellistTypeID,
+		ItemID,
+		NULL as DataCaptureMethod,
+		SeedingMethodId,
+		ItemSSC,
+		DMFAnalysisPeriodId
+		
+from tblRMRSnapshotLatest
+LEFT JOIN   CustomerSortedCopy..tblSpecNames sn on sn.SpecNameId = tblRMRSNapshotLatest.SpecnameId
+where	DMFAnalysisPeriodId='1510' -- Period
+AND		DMFSurveysId in (8,9) -- Mailsort & Presstream
+AND		DMFStatusId IN (6,7) -- Valid / Not Yet Published
+
+
+-- Too Many Presstream Items
+
+SELECT	WojId,
+		DMFSurveysId,
+		ClassOfMailID,
+		sn.Name as Content,
+		COUNT(*) AS Items
+		
+from tblRMRSnapshotLatest
+LEFT JOIN   CustomerSortedCopy..tblSpecNames sn on sn.SpecNameId = tblRMRSNapshotLatest.SpecnameId
+where	DMFAnalysisPeriodId='1510'-- Period
+AND		DMFSurveysId in (8,9) -- Mailsort & Presstream
+AND		DMFStatusId IN (6,7) -- Valid / Not Yet Published
+
+GROUP BY WojId,
+		DMFSurveysId,
+		ClassOfMailID,
+		sn.Name
+ORDER BY WojId,
+		DMFSurveysId,
+		ClassOfMailID,
+		sn.Name
+
+-- Bank Holiday Report 
+
+SELECT	WojId,
+		ItemId,
+		ReceiverOutcode,
+		ReceiverPostcodeArea,
+		DMFCalendarDateOfPosting,
+		DateOfReceipt,
+		ReceiverId
+FROM	tblRMRSnapshotLatest
+where	DMFAnalysisPeriodId='1510' -- Period
+AND		DMFSurveysId in (8,9) -- Mailsort & Presstream
+AND		DMFStatusId IN (6,7) -- Valid / Not Yet Published
+
+-- Met LAT
+SELECT	WojId,
+		ReceiverId,
+		TransitTime,
+		sn.Name,
+		DMFSurveysId,
+		ClassOfMailId,
+		ReceiverOutcode,
+		ReceiverIncode,
+		DMFCalendarDateofPosting,
+		QualityOfServiceDateOfPosting,
+		DateofReceipt,
+		DMFReceiverPanellistTypeId,
+		ItemID,
+		NULL AS DataCaptureMethod,
+		SeedingMethodId,
+		ItemSSC,
+		DMFAnalysisPeriodId,
+		ReceiverMSLetter,
+		tblRMRSnapshotLatest.DMFMetLAT
+FROM	tblRMRSnapshotLatest
+LEFT JOIN   CustomerSortedCopy..tblSpecNames sn on sn.SpecNameId = tblRMRSNapshotLatest.SpecnameId
+where	DMFAnalysisPeriodId='1510' -- Period
+AND		DMFSurveysId in (8,9) -- Mailsort & Presstream
+AND		DMFStatusId IN (6,7) -- Valid / Not Yet Published
+
+
+-- Carryover Report
+SELECT	DMFSurveysId,ClassOfMailId,
+		WojId,
+		DMFCalendarDateOfPosting,
+		sn.Name,
+		DateOfReceipt,
+		DMFAnalysisPeriodId,
+		WhenReported,
+		COUNT(*) as Items
+
+FROM	tblRMRSnapshotLatest
+LEFT JOIN   CustomerSortedCopy..tblSpecNames sn on sn.SpecNameId = tblRMRSNapshotLatest.SpecnameId
+where	DMFAnalysisPeriodId in ('1509','1510') -- Periods
+AND		DMFSurveysId in (8,9) -- Mailsort & Presstream
+AND		DMFStatusId IN (6,7) -- Valid / Not Yet Published
+
+GROUP BY DMFSurveysId,ClassOfMailId,
+		WojId,
+		DMFCalendarDateOfPosting,
+		sn.Name,
+		DateOfReceipt,
+		DMFAnalysisPeriodId,
+		WhenReported
+ORDER BY DMFSurveysId,ClassOfMailId,
+		WojId,
+		DMFCalendarDateOfPosting,
+		sn.Name,
+		DateOfReceipt,
+		DMFAnalysisPeriodId,
+		WhenReported
+
+-- Performance Report
+SELECT	tblRMRSNapshotLatest.SpecNameId,
+		WojId,
+		case
+			WHEN DMFSurveysId = 8 THEN 'Mailsort '
+			WHEN DMFSurveysId = 9 THEN 'Presstream '
+			ELSE '? '
+		END + CAST(ClassofMailId as VARCHAR(10)) as Class,
+		mlr.CompanyName,
+		sn.Name,
+		mh.CompanyName,
+		DMFCalendarDateOfPosting,
+		SenderRDC,
+		DMFDateOfPostingTypeId,
+		SeedingMethodId,
+		DMFSurveysId,
+		DMFAnalysisPeriodId,
+		WhenReported,
+		COUNT(*) as Item,
+		SUM(CASE WHEN OnTImeYN=1 THEN 1.0 ELSE 0.0 END) / CAST(COUNT(*) as FLOAT) as QofS
+		
+
+FROM	tblRMRSnapshotLatest
+LEFT JOIN   CustomerSortedCopy..tblSpecNames sn on sn.SpecNameId = tblRMRSNapshotLatest.SpecnameId
+LEFT JOIN	CustomerSortedCopy..tblCompanies mlr on mlr.CompanyId = DMFMailerId
+LEFT JOIN	CustomerSortedCopy..tblCompanies mh on mh.CompanyId = MailingHouseId
+where	DMFAnalysisPeriodId in ('1602','1603','1604') -- Last Three Periods
+AND		DMFSurveysId in (8,9) -- Mailsort & Presstream, should always be 8 & 9
+AND		DMFStatusId IN (6,7) -- Valid / Not Yet Published, should always be 6 & 7
+
+GROUP BY tblRMRSNapshotLatest.SpecNameId,
+		WojId,
+		ClassOfMailId,
+		mlr.CompanyName,
+		sn.Name,
+		mh.CompanyName,
+		DMFCalendarDateOfPosting,
+		SenderRDC,
+		SeedingMethodId,
+		DMFDateOfPostingTypeId,
+		DMFSurveysId,
+		DMFAnalysisPeriodId,
+		WhenReported
+ORDER BY tblRMRSNapshotLatest.SpecNameId,
+		WojId,
+		ClassOfMailId,
+		mlr.CompanyName,
+		sn.Name,
+		mh.CompanyName,
+		DMFCalendarDateOfPosting,
+		SenderRDC,
+		SeedingMethodId,
+		DMFDateOfPostingTypeId,
+		DMFSurveysId,
+		DMFAnalysisPeriodId,
+		WhenReported
+		
+-- Sanity Checks
