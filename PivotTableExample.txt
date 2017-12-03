@@ -1,0 +1,40 @@
+select * from 
+(select  ItemID,s.name,
+		convert(varchar(10),DMFCalendarDateOfPosting,103) CalendarDateOfPosting,
+		
+		
+		
+		case
+		when QualityOfServiceDayOfPosting = 1 then 'Sunday'
+		when QualityOfServiceDayOfPosting = 2 then 'Monday'
+		when QualityOfServiceDayOfPosting = 3 then 'Tuesday'
+		when QualityOfServiceDayOfPosting = 4 then 'Wednesday'
+		when QualityOfServiceDayOfPosting = 5 then 'Thursday'
+		when QualityOfServiceDayOfPosting = 6 then 'Friday'
+		when QualityOfServiceDayOfPosting = 7 then 'Saturday'
+		Else 'else'
+		
+		end as Day,
+		convert(varchar(10),QualityOfServiceDateOfPosting,103) QofSDateOfposting
+
+from	tblRMRSnapshotLatest
+join CustomerSortedCopy..tblSpecnames s on s.SpecNameId = tblRMRSnapshotLatest.SpecnameId
+where	DMFAnalysisPeriodId IN ('1609')	-- Analysis Period
+AND		DMFStatusId IN (6,7)			-- Valid / Not yet published.
+AND		DMFSurveysId in (8)		-- Mailsort & Presstream
+AND		ClassOfMailID = 3) BaseData
+
+pivot(
+count(itemid)
+for Day in ( [Sunday],[Monday],[Tuesday],[Wednesday],[Thursday],[Friday],[Saturday],[else])
+
+
+
+) PivotData
+
+
+
+
+
+
+
